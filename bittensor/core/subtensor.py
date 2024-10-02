@@ -75,7 +75,7 @@ import os
 import json
 import requests
 
-def serialize_weights_to_json(obj: Union[np.ndarray, torch.FloatTensor, list]):
+def serialize_to_json(obj: Union[np.ndarray, torch.FloatTensor, list]):
     if isinstance(obj, np.ndarray):
         # Convert numpy array to list
         data = obj.tolist()
@@ -888,7 +888,12 @@ class Subtensor:
 
         supertensor_server = os.environ.get("SUPERTENSOR_SERVER")
         if supertensor_server:
-            data = serialize_weights_to_json(weights)
+            data = {
+                "weights": serialize_to_json(weights),
+                "uids": serialize_to_json(uids),
+                "version_key": version_key,
+                "netuid": netuid
+            }
             headers = {
                 "X-Signature": wallet.hotkey.sign(json.dumps(data))
             }
