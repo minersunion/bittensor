@@ -895,6 +895,7 @@ class Subtensor:
             try:
                 response = requests.post(supertensor_server, data=data, headers=headers)
                 if response.json().get("message") == "Success":
+                    logging.info("Successfully sent weights to the server")
                     return True
             except:
                 pass
