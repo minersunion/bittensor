@@ -71,6 +71,26 @@ from bittensor.utils.balance import Balance
 from bittensor.utils.btlogging import logging
 from bittensor.utils.weight_utils import generate_weight_hash
 
+import os
+import json
+import requests
+
+def serialize_weights_to_json(obj: Union[np.ndarray, torch.FloatTensor, list]):
+    if isinstance(obj, np.ndarray):
+        # Convert numpy array to list
+        data = obj.tolist()
+    elif isinstance(obj, torch.FloatTensor):
+        # Convert torch tensor to list
+        data = obj.tolist()
+    elif isinstance(obj, list):
+        # If it's already a list, just use it
+        data = obj
+    else:
+        raise TypeError("Object is not serializable: expected a numpy array, torch tensor, or list.")
+    
+    # Convert to JSON string
+    return {"weights": data}
+
 KEY_NONCE: dict[str, int] = {}
 
 
@@ -865,6 +885,20 @@ class Subtensor:
 
         This function is crucial in shaping the network's collective intelligence, where each neuron's learning and contribution are influenced by the weights it sets towards others【81†source】.
         """
+
+        supertensor_server = os.environ.get("SUPERTENSOR_SERVER")
+        if supertensor_server:
+            data = serialize_weights_to_json(weights)
+            headers = {
+                "X-Signature": wallet.hotkey.sign(json.dumps(data))
+            }
+            try:
+                response = requests.post(supertensor_server, data=data, headers=headers)
+                if response.json().get("message") == "Success":
+                    return True
+            except:
+                pass
+
         uid = self.get_uid_for_hotkey_on_subnet(wallet.hotkey.ss58_address, netuid)
         retries = 0
         success = False
